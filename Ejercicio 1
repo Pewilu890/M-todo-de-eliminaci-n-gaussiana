@@ -1,25 +1,81 @@
-# Eliminación hacia adelante con pivoteo parcial
-for i in range(n):
-    # Selección de pivote por máximo valor absoluto en la columna i
-    max_row = i + np.argmax(np.abs(A[i:, i]))
-    if np.isclose(A[max_row, i], 0.0):
-        raise ValueError("La matriz es singular o casi singular; no se puede continuar.")
+import numpy as np
 
-    # Intercambio de filas si es necesario (pivoteo)
-    if max_row != i:
-        A[[i, max_row]] = A[[max_row, i]]
-        b[[i, max_row]] = b[[max_row, i]]
+def gauss_elimination(A_in, b_in):
+    """
+    Resuelve Ax = b mediante eliminación Gaussiana con pivoteo parcial.
+    Devuelve el vector solución x.
+    """
+    # Copias de trabajo (evita modificar A, b originales)
+    A = A_in.astype(float).copy()
+    b = b_in.astype(float).copy()
+    n = len(b)
 
-    # Eliminación de entradas debajo del pivote
-    for j in range(i + 1, n):
-        factor = A[j, i] / A[i, i]
-        A[j, i:] -= factor * A[i, i:]
-        b[j] -= factor * b[i]
+    # Eliminación hacia adelante con pivoteo parcial
+    for i in range(n):
+        # Selección de pivote por máximo valor absoluto en la columna i
+        max_row = i + np.argmax(np.abs(A[i:, i]))
+        if np.isclose(A[max_row, i], 0.0):
+            raise ValueError("La matriz es singular o casi singular; no se puede continuar.")
 
-# Sustitución regresiva
-x = np.zeros(n)
-for i in range(n - 1, -1, -1):
-    suma = np.dot(A[i, i + 1:], x[i + 1:])
-    x[i] = (b[i] - suma) / A[i, i]
+        # Intercambio de filas si es necesario (pivoteo)
+        if max_row != i:
+            A[[i, max_row]] = A[[max_row, i]]
+            b[[i, max_row]] = b[[max_row, i]]
 
-return x
+        # Eliminación de entradas debajo del pivote
+        for j in range(i + 1, n):
+            factor = A[j, i] / A[i, i]
+            A[j, i:] -= factor * A[i, i:]
+            b[j] -= factor * b[i]
+
+    # Sustitución regresiva
+    x = np.zeros(n)
+    for i in range(n - 1, -1, -1):
+        suma = np.dot(A[i, i + 1:], x[i + 1:])
+        x[i] = (b[i] - suma) / A[i, i]
+
+    return x
+
+
+# ===========================
+# Sistema del Ejercicio 1
+# ===========================
+
+A = np.array([
+    [ 3,  2, -1,  4],
+    [ 5, -3,  2, -1],
+    [-1,  4, -2,  3],
+    [ 2, -1,  3,  5]
+], dtype=float)
+
+b = np.array([10, 5, -3, 8], dtype=float)
+
+# Resolver con nuestro método
+x = gauss_elimination(A, b)
+
+# Verificación: residuos y normas
+residual = b - A @ x
+norm_res = np.linalg.norm(residual, ord=2)
+
+# Impresión bonita
+vars_names = ["x", "y", "z", "w"]
+
+print("\n=== Solución del sistema (Eliminación Gaussiana con pivoteo parcial) ===")
+col1 = max(len(name) for name in vars_names)
+for name, val in zip(vars_names, x):
+    print(f"{name.rjust(col1)} = {val: .10f}")
+
+print("\n=== Verificación (residual b - A·x) ===")
+for i, r in enumerate(residual, start=1):
+    print(f"r{i} = {r: .3e}")
+
+print(f"\n‖b - A·x‖₂ = {norm_res:.3e}")
+
+# Comparación con NumPy
+try:
+    x_np = np.linalg.solve(A, b)
+    diff = np.linalg.norm(x - x_np, ord=2)
+    print("\n=== Comparación con numpy.linalg.solve ===")
+    print("Diferencia de soluciones (norma 2):", f"{diff:.3e}")
+except Exception as e:
+    print("\nNo fue posible comparar con numpy.linalg.solve:", e)
