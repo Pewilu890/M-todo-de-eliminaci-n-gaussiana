@@ -1,0 +1,25 @@
+# Eliminación hacia adelante con pivoteo parcial
+for i in range(n):
+    # Selección de pivote por máximo valor absoluto en la columna i
+    max_row = i + np.argmax(np.abs(A[i:, i]))
+    if np.isclose(A[max_row, i], 0.0):
+        raise ValueError("La matriz es singular o casi singular; no se puede continuar.")
+
+    # Intercambio de filas si es necesario (pivoteo)
+    if max_row != i:
+        A[[i, max_row]] = A[[max_row, i]]
+        b[[i, max_row]] = b[[max_row, i]]
+
+    # Eliminación de entradas debajo del pivote
+    for j in range(i + 1, n):
+        factor = A[j, i] / A[i, i]
+        A[j, i:] -= factor * A[i, i:]
+        b[j] -= factor * b[i]
+
+# Sustitución regresiva
+x = np.zeros(n)
+for i in range(n - 1, -1, -1):
+    suma = np.dot(A[i, i + 1:], x[i + 1:])
+    x[i] = (b[i] - suma) / A[i, i]
+
+return x
